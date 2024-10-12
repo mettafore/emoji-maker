@@ -10,8 +10,13 @@ export default function Home() {
 
   const handleGenerateEmoji = async (prompt: string) => {
     try {
+      console.log('Generating emoji for prompt:', prompt);
       const emojiUrl = await generateEmoji(prompt);
-      setGeneratedEmojis((prev) => [...prev, emojiUrl]);
+      console.log('Generated emoji URL:', emojiUrl);
+      setGeneratedEmojis((prev) => {
+        console.log('Updated emojis:', [...prev, emojiUrl]);
+        return [...prev, emojiUrl];
+      });
     } catch (error) {
       console.error('Failed to generate emoji:', error);
       // TODO: Add error handling UI

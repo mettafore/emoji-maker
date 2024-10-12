@@ -1,23 +1,29 @@
-import Replicate from 'replicate';
-
-const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_TOKEN,
-});
-
 export async function generateEmoji(prompt: string): Promise<string> {
-  const output = await replicate.run(
-    "fofr/sdxl-emoji:dee76b5afde21b0f01ed7925f0665b7e879c50ee718c5f78a9d38e04d523cc5e",
-    {
-      input: {
-        prompt,
-        apply_watermark: false,
+  console.log('Calling generate-emoji API with prompt:', prompt);
+  
+  try {
+    const response = await fetch('/api/generate-emoji', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify({ prompt }),
+    });
+
+    if (!response.ok) {
+      throw new Error('API request failed');
     }
-  );
 
-  if (Array.isArray(output) && output.length > 0) {
-    return output[0];
+    const data = await response.json();
+    console.log('API response:', data);
+
+    if (data.emojiUrl) {
+      return data.emojiUrl;
+    }
+
+    throw new Error('Unexpected output format from API');
+  } catch (error) {
+    console.error('Error calling generate-emoji API:', error);
+    throw error;
   }
-
-  throw new Error('Failed to generate emoji');
 }
