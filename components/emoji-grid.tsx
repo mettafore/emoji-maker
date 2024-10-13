@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { Card } from './ui/card';
 import { Download, Heart } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 interface EmojiGridProps {
   emojis: string[];
@@ -10,6 +11,18 @@ interface EmojiGridProps {
 
 export function EmojiGrid({ emojis }: EmojiGridProps) {
   console.log('emojis:', emojis); // Keep this debug log
+
+  const [likes, setLikes] = useState<number[]>([]);
+
+  useEffect(() => {
+    setLikes(prevLikes => {
+      const newLikes = [...prevLikes];
+      while (newLikes.length < emojis.length) {
+        newLikes.push(0);
+      }
+      return newLikes;
+    });
+  }, [emojis]);
 
   const handleDownload = (emojiUrl: string, index: number) => {
     fetch(emojiUrl)
@@ -28,6 +41,28 @@ export function EmojiGrid({ emojis }: EmojiGridProps) {
       .catch(error => console.error('Error downloading emoji:', error));
   };
 
+  const handleLike = async (index: number) => {
+    console.log('index:', index);
+    console.log('likes:', likes);
+    try {
+      const response = { ok: true }; // Mock response for testing
+
+      if (response.ok) {
+        console.log('response.ok');
+        setLikes(prevLikes => {
+          const newLikes = [...prevLikes];
+          // Toggle like: if already liked, unlike (decrease count), otherwise like (increase count)
+          newLikes[index] = newLikes[index] > 0 ? newLikes[index] - 1 : (newLikes[index] || 0) + 1;
+          return newLikes;
+        });
+      } else {
+        console.error('Failed to toggle like for emoji');
+      }
+    } catch (error) {
+      console.error('Error toggling like for emoji:', error);
+    }
+  };
+
   const renderEmojiCard = (emoji: string, index: number) => (
     <Card key={index} className="relative group">
       <Image
@@ -41,10 +76,14 @@ export function EmojiGrid({ emojis }: EmojiGridProps) {
         <button className="text-white p-2" onClick={() => handleDownload(emoji, index)}>
           <Download size={24} />
         </button>
-        <button className="text-white p-2">
-          <Heart size={24} />
+        <button
+          className={`text-white p-2 ${likes[index] > 0 ? 'text-red-500' : ''}`}
+          onClick={() => handleLike(index)}
+        >
+          <Heart size={24} fill={likes[index] > 0 ? 'currentColor' : 'none'} />
         </button>
       </div>
+      <p className="text-center text-gray-500 mt-2">{likes[index]} Likes</p>
     </Card>
   );
 
