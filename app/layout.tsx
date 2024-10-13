@@ -1,4 +1,7 @@
+// 'use client';
+
 import type { Metadata } from "next";
+import { ProfileProvider } from "@/components/ProfileProvider";
 import localFont from "next/font/local";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Header } from "@/components/headers";
@@ -22,9 +25,9 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <ClerkProvider>
       <html lang="en">
@@ -32,7 +35,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
           <Header />
-          {children}
+          <ProfileProvider>
+            {children}
+          </ProfileProvider>
         </body>
       </html>
     </ClerkProvider>
