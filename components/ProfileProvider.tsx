@@ -10,6 +10,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     return <div>Loading...</div>;
   }
 
-  // You can pass the profile data to children components if needed
-  return <>{children}</>;
+  return <ProfileContext.Provider value={profile}>{children}</ProfileContext.Provider>;
 }
+
+export const ProfileContext = React.createContext<any>(null);

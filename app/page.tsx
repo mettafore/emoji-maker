@@ -4,14 +4,21 @@ import { useState } from 'react';
 import { EmojiForm } from '../components/emoji-form';
 import { EmojiGrid } from '../components/emoji-grid';
 import { generateEmoji } from '../lib/replicate';
+import { useUser } from '@clerk/nextjs';
 
 export default function Home() {
+  const { user } = useUser();
   const [generatedEmojis, setGeneratedEmojis] = useState<string[]>([]);
 
   const handleGenerateEmoji = async (prompt: string) => {
+    if (!user?.id) {
+      console.error('User not authenticated');
+      return;
+    }
+
     try {
       console.log('Generating emoji for prompt:', prompt);
-      const emojiUrl = await generateEmoji(prompt);
+      const emojiUrl = await generateEmoji(prompt, user.id);
       console.log('Generated emoji URL:', emojiUrl);
       setGeneratedEmojis((prev) => {
         console.log('Updated emojis:', [...prev, emojiUrl]);

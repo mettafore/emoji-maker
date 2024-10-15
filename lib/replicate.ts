@@ -1,4 +1,4 @@
-export async function generateEmoji(prompt: string): Promise<string> {
+export async function generateEmoji(prompt: string, userId: string): Promise<string> {
   console.log('Calling generate-emoji API with prompt:', prompt);
   
   try {
@@ -7,7 +7,7 @@ export async function generateEmoji(prompt: string): Promise<string> {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ prompt }),
+      body: JSON.stringify({ prompt, userId }),
     });
 
     if (!response.ok) {
