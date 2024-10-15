@@ -1,9 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// These lines are not needed as we're importing the supabase client from './supabase'
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { supabase } from './supabase';
 
 export async function uploadEmojiToStorage(buffer: Buffer, fileName: string): Promise<string | null> {
   const { data, error } = await supabase.storage

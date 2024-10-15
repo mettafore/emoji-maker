@@ -1,16 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import Replicate from 'replicate';
 import { uploadEmojiToStorage } from '@/lib/supabase-storage';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
 
 const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,
 });
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+
 
 export default async function handler(
   req: NextApiRequest,
@@ -59,25 +56,36 @@ export default async function handler(
       const buffer = Buffer.from(arrayBuffer);
 
       // Upload to Supabase storage
-      const fileName = `emoji_${Date.now()}.png`;
-      const imageUrl = await uploadEmojiToStorage(buffer, fileName);
+      let imageUrl;
+      try {
+        const fileName = `emoji_${Date.now()}.png`;
+        imageUrl = await uploadEmojiToStorage(buffer, fileName);
+        if (!imageUrl) {
+          throw new Error('Failed to upload emoji to storage');
+        }
+      } catch (error) {
+        console.error('Error uploading emoji to storage:', error);
+        return res.status(500).json({ message: 'Error uploading emoji to storage' });
+      }
 
       if (imageUrl) {
         // Add entry to emojis table
-        const { data, error } = await supabase
-          .from('emojis')
-          .insert({
-            image_url: imageUrl,
-            prompt: prompt,
-            creator_user_id: userId,
-          });
+        try {
+          const { data, error } = await supabase
+            .from('emojis')
+            .insert({
+              image_url: imageUrl,
+              prompt: prompt,
+              creator_user_id: userId,
+            });
+          
+          if (error) throw error;
 
-        if (error) {
+          return res.status(200).json({ emojiUrl: imageUrl });
+        } catch (error) {
           console.error('Error inserting emoji data:', error);
           return res.status(500).json({ message: 'Error saving emoji data' });
         }
-
-        return res.status(200).json({ emojiUrl: imageUrl });
       } else {
         return res.status(500).json({ message: 'Error uploading emoji to storage' });
       }
