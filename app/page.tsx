@@ -8,7 +8,7 @@ import { useUser } from '@clerk/nextjs';
 
 export default function Home() {
   const { user } = useUser();
-  const [generatedEmojis, setGeneratedEmojis] = useState<string[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleGenerateEmoji = async (prompt: string) => {
     if (!user?.id) {
@@ -16,17 +16,16 @@ export default function Home() {
       return;
     }
 
+    setIsGenerating(true);
     try {
       console.log('Generating emoji for prompt:', prompt);
-      const emojiUrl = await generateEmoji(prompt, user.id);
-      console.log('Generated emoji URL:', emojiUrl);
-      setGeneratedEmojis((prev) => {
-        console.log('Updated emojis:', [...prev, emojiUrl]);
-        return [...prev, emojiUrl];
-      });
+      await generateEmoji(prompt, user.id);
+      // The EmojiGrid component will automatically fetch the new emoji
     } catch (error) {
       console.error('Failed to generate emoji:', error);
       // TODO: Add error handling UI
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -35,8 +34,8 @@ export default function Home() {
       <div className="container mx-auto px-4">
         <h1 className="text-3xl font-bold text-center mb-8">🤖 Emoji Maker</h1>
         <div className="flex flex-col items-center gap-8">
-          <EmojiForm onGenerate={handleGenerateEmoji} />
-          <EmojiGrid emojis={generatedEmojis} />
+          <EmojiForm onGenerate={handleGenerateEmoji} isGenerating={isGenerating} />
+          <EmojiGrid />
         </div>
       </div>
     </div>
