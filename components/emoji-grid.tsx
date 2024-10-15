@@ -28,14 +28,15 @@ export function EmojiGrid() {
     loadEmojis();
   }, []);
 
-  const [likes, setLikes] = useState<number[]>([]);
+  // Change likes state to an object
+  const [likes, setLikes] = useState<{ [key: number]: number }>({});
 
   useEffect(() => {
     setLikes(prevLikes => {
-      const newLikes = [...prevLikes];
-      while (newLikes.length < emojis.length) {
-        newLikes.push(0);
-      }
+      const newLikes: { [key: number]: number } = {};
+      emojis.forEach(emoji => {
+        newLikes[emoji.id] = prevLikes[emoji.id] || 0; // Initialize likes for each emoji
+      });
       return newLikes;
     });
   }, [emojis]);
@@ -57,8 +58,8 @@ export function EmojiGrid() {
       .catch(error => console.error('Error downloading emoji:', error));
   };
 
-  const handleLike = async (index: number) => {
-    console.log('index:', index);
+  const handleLike = async (id: number) => {
+    console.log('id:', id);
     console.log('likes:', likes);
     try {
       const response = { ok: true }; // Mock response for testing
@@ -66,9 +67,9 @@ export function EmojiGrid() {
       if (response.ok) {
         console.log('response.ok');
         setLikes(prevLikes => {
-          const newLikes = [...prevLikes];
+          const newLikes = { ...prevLikes };
           // Toggle like: if already liked, unlike (decrease count), otherwise like (increase count)
-          newLikes[index] = newLikes[index] > 0 ? newLikes[index] - 1 : (newLikes[index] || 0) + 1;
+          newLikes[id] = newLikes[id] > 0 ? newLikes[id] - 1 : (newLikes[id] || 0) + 1;
           return newLikes;
         });
       } else {
@@ -93,13 +94,13 @@ export function EmojiGrid() {
           <Download size={24} />
         </button>
         <button
-          className={`text-white p-2 ${emoji.likes_count > 0 ? 'text-red-500' : ''}`}
+          className={`text-white p-2 ${likes[emoji.id] > 0 ? 'text-red-500' : ''}`}
           onClick={() => handleLike(emoji.id)}
         >
-          <Heart size={24} fill={emoji.likes_count > 0 ? 'currentColor' : 'none'} />
+          <Heart size={24} fill={likes[emoji.id] > 0 ? 'currentColor' : 'none'} />
         </button>
       </div>
-      <p className="text-center text-gray-500 mt-2">{emoji.likes_count} Likes</p>
+      <p className="text-center text-gray-500 mt-2">{likes[emoji.id] || 0} Likes</p>
     </Card>
   );
 
