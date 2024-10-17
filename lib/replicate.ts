@@ -1,5 +1,3 @@
-import { supabase } from './supabase';
-import { uploadEmojiToStorage } from './supabase-storage';
 
 export async function generateEmoji(prompt: string, userId: string): Promise<{ emojiUrl: string, newEmoji: any }> {
   console.log('Calling generate-emoji API with prompt:', prompt);
