@@ -9,8 +9,6 @@ export function Header() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
-    const { isSignedIn, user } = useUser();
-
     return (
         <div className="flex items-center justify-end mt-4 mr-4">
             <SignedOut>
@@ -28,4 +26,3 @@ export function Header() {
         </div>
     );
 }
-
