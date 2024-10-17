@@ -1,5 +1,12 @@
+interface Emoji {
+  id: string;
+  url: string;
+  prompt: string;
+  userId: string;
+  createdAt: Date;
+}
 
-export async function generateEmoji(prompt: string, userId: string): Promise<{ emojiUrl: string, newEmoji: any }> {
+export async function generateEmoji(prompt: string, userId: string): Promise<{ emojiUrl: string, newEmoji: Emoji }> {
   console.log('Calling generate-emoji API with prompt:', prompt);
   
   try {
@@ -20,7 +27,7 @@ export async function generateEmoji(prompt: string, userId: string): Promise<{ e
 
     if (data.emojiUrl && data.newEmoji) {
       // The API has already inserted the emoji into the database
-      return { emojiUrl: data.emojiUrl, newEmoji: data.newEmoji };
+      return { emojiUrl: data.emojiUrl, newEmoji: data.newEmoji as Emoji };
     }
 
     throw new Error('Unexpected output format from API');
