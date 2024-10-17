@@ -71,7 +71,7 @@ export default async function handler(
       if (imageUrl) {
         // Add entry to emojis table
         try {
-          const { data, error } = await supabase
+          const { error } = await supabase
             .from('emojis')
             .insert({
               image_url: imageUrl,

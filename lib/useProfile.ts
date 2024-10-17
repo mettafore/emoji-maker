@@ -5,7 +5,7 @@ import { useUser } from '@clerk/nextjs';
 import { supabase } from './supabase';
 
 export function useProfile() {
-  const { isSignedIn, user } = useUser();
+  const { user } = useUser();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
