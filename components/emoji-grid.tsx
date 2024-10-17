@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { Card } from './ui/card';
 import { Download, Heart } from 'lucide-react';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { fetchAllEmojis, toggleEmojiLike, supabase } from '@/lib/supabase';
 
 interface Emoji {
