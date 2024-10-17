@@ -9,6 +9,7 @@ import { useUser } from '@clerk/nextjs';
 export default function Home() {
   const { user } = useUser();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const handleGenerateEmoji = async (prompt: string) => {
     if (!user?.id) {
@@ -20,7 +21,7 @@ export default function Home() {
     try {
       console.log('Generating emoji for prompt:', prompt);
       await generateEmoji(prompt, user.id);
-      // The EmojiGrid component will automatically fetch the new emoji
+      setRefreshTrigger(prev => prev + 1); // This is where refreshTrigger changes
     } catch (error) {
       console.error('Failed to generate emoji:', error);
       // TODO: Add error handling UI
@@ -35,7 +36,7 @@ export default function Home() {
         <h1 className="text-3xl font-bold text-center mb-8">🤖 Emoji Maker</h1>
         <div className="flex flex-col items-center gap-8">
           <EmojiForm onGenerate={handleGenerateEmoji} isGenerating={isGenerating} />
-          <EmojiGrid />
+          <EmojiGrid refreshTrigger={refreshTrigger} />
         </div>
       </div>
     </div>

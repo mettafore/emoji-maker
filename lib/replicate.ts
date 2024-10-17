@@ -1,4 +1,7 @@
-export async function generateEmoji(prompt: string, userId: string): Promise<string> {
+import { supabase } from './supabase';
+import { uploadEmojiToStorage } from './supabase-storage';
+
+export async function generateEmoji(prompt: string, userId: string): Promise<{ emojiUrl: string, newEmoji: any }> {
   console.log('Calling generate-emoji API with prompt:', prompt);
   
   try {
@@ -17,8 +20,9 @@ export async function generateEmoji(prompt: string, userId: string): Promise<str
     const data = await response.json();
     console.log('API response:', data);
 
-    if (data.emojiUrl) {
-      return data.emojiUrl;
+    if (data.emojiUrl && data.newEmoji) {
+      // The API has already inserted the emoji into the database
+      return { emojiUrl: data.emojiUrl, newEmoji: data.newEmoji };
     }
 
     throw new Error('Unexpected output format from API');

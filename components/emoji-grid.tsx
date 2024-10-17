@@ -14,7 +14,11 @@ interface Emoji {
   creator_user_id: string;
 }
 
-export function EmojiGrid() {
+interface EmojiGridProps {
+  refreshTrigger: number;
+}
+
+export function EmojiGrid({ refreshTrigger }: EmojiGridProps) {
   const [emojis, setEmojis] = useState<Emoji[]>([]);
   const [loading, setLoading] = useState(true);
   const [localLikes, setLocalLikes] = useState<Record<number, boolean>>({});
@@ -29,6 +33,7 @@ export function EmojiGrid() {
 
   useEffect(() => {
     async function loadEmojis() {
+      setLoading(true);
       const fetchedEmojis = await fetchAllEmojis();
       setEmojis(fetchedEmojis);
       const initialLikes = fetchedEmojis.reduce((acc, emoji) => {
@@ -44,12 +49,20 @@ export function EmojiGrid() {
     const channel = supabase
       .channel('emoji_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'emojis' }, (payload) => {
-        if (payload.eventType === 'UPDATE' && payload.new) {
+        if (payload.eventType === 'INSERT' && payload.new) {
+          const newEmoji = payload.new as Emoji;
+          setEmojis(currentEmojis => {
+            // Check if the emoji already exists to avoid duplicates
+            if (!currentEmojis.some(emoji => emoji.id === newEmoji.id)) {
+              return [newEmoji, ...currentEmojis];
+            }
+            return currentEmojis;
+          });
+          setLocalLikes(prev => ({ ...prev, [newEmoji.id]: newEmoji.likes_count > 0 }));
+        } else if (payload.eventType === 'UPDATE' && payload.new) {
           const updatedEmoji = payload.new as Emoji;
           updateEmoji(updatedEmoji);
-          if (!localLikes[updatedEmoji.id]) {
-            localLikes[updatedEmoji.id] = updatedEmoji.likes_count > 0;
-          }
+          setLocalLikes(prev => ({ ...prev, [updatedEmoji.id]: updatedEmoji.likes_count > 0 }));
         }
       })
       .subscribe();
@@ -57,7 +70,7 @@ export function EmojiGrid() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [updateEmoji]);
+  }, [updateEmoji, refreshTrigger]);
 
   const handleDownload = (emojiUrl: string, index: number) => {
     fetch(emojiUrl)

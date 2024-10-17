@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -7,17 +6,19 @@ import { Input } from './ui/input';
 import { Card } from './ui/card';
 import { Loader2 } from 'lucide-react';
 
-export function EmojiForm({ onGenerate }: { onGenerate: (prompt: string) => Promise<void> }) {
+interface EmojiFormProps {
+  onGenerate: (prompt: string) => Promise<void>;
+  isGenerating: boolean;
+}
+
+export function EmojiForm({ onGenerate, isGenerating }: EmojiFormProps) {
   const [prompt, setPrompt] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim()) return;
 
-    setIsLoading(true);
     await onGenerate(prompt);
-    setIsLoading(false);
     setPrompt('');
   };
 
@@ -30,8 +31,8 @@ export function EmojiForm({ onGenerate }: { onGenerate: (prompt: string) => Prom
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
         />
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? (
+        <Button type="submit" disabled={isGenerating}>
+          {isGenerating ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Generating...

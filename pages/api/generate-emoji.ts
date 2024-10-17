@@ -71,17 +71,23 @@ export default async function handler(
       if (imageUrl) {
         // Add entry to emojis table
         try {
-          const { error } = await supabase
+          const { data, error } = await supabase
             .from('emojis')
             .insert({
               image_url: imageUrl,
               prompt: prompt,
               creator_user_id: userId,
-            });
-          
+            })
+            .select()
+            .single(); // Change this to single() to ensure we only get one row
+
           if (error) throw error;
 
-          return res.status(200).json({ emojiUrl: imageUrl });
+          if (data) {
+            return res.status(200).json({ emojiUrl: imageUrl, newEmoji: data });
+          } else {
+            throw new Error('Emoji inserted but no data returned');
+          }
         } catch (error) {
           console.error('Error inserting emoji data:', error);
           return res.status(500).json({ message: 'Error saving emoji data' });
