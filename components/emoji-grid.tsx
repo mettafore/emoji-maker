@@ -3,8 +3,8 @@
 import Image from 'next/image';
 import { Card } from './ui/card';
 import { Download, Heart } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { fetchAllEmojis } from '@/lib/supabase';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { fetchAllEmojis, toggleEmojiLike, supabase } from '@/lib/supabase';
 
 interface Emoji {
   id: number;
@@ -17,29 +17,47 @@ interface Emoji {
 export function EmojiGrid() {
   const [emojis, setEmojis] = useState<Emoji[]>([]);
   const [loading, setLoading] = useState(true);
+  const [localLikes, setLocalLikes] = useState<Record<number, boolean>>({});
+
+  const updateEmoji = useCallback((updatedEmoji: Emoji) => {
+    setEmojis(currentEmojis =>
+      currentEmojis.map(emoji =>
+        emoji.id === updatedEmoji.id ? { ...emoji, ...updatedEmoji } : emoji
+      )
+    );
+  }, []);
 
   useEffect(() => {
     async function loadEmojis() {
       const fetchedEmojis = await fetchAllEmojis();
       setEmojis(fetchedEmojis);
+      const initialLikes = fetchedEmojis.reduce((acc, emoji) => {
+        acc[emoji.id] = emoji.likes_count > 0;
+        return acc;
+      }, {} as Record<number, boolean>);
+      setLocalLikes(initialLikes);
       setLoading(false);
     }
 
     loadEmojis();
-  }, []);
 
-  // Change likes state to an object
-  const [likes, setLikes] = useState<{ [key: number]: number }>({});
+    const channel = supabase
+      .channel('emoji_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'emojis' }, (payload) => {
+        if (payload.eventType === 'UPDATE' && payload.new) {
+          const updatedEmoji = payload.new as Emoji;
+          updateEmoji(updatedEmoji);
+          if (!localLikes[updatedEmoji.id]) {
+            localLikes[updatedEmoji.id] = updatedEmoji.likes_count > 0;
+          }
+        }
+      })
+      .subscribe();
 
-  useEffect(() => {
-    setLikes(prevLikes => {
-      const newLikes: { [key: number]: number } = {};
-      emojis.forEach(emoji => {
-        newLikes[emoji.id] = prevLikes[emoji.id] || 0; // Initialize likes for each emoji
-      });
-      return newLikes;
-    });
-  }, [emojis]);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [updateEmoji]);
 
   const handleDownload = (emojiUrl: string, index: number) => {
     fetch(emojiUrl)
@@ -59,25 +77,22 @@ export function EmojiGrid() {
   };
 
   const handleLike = async (id: number) => {
-    console.log('id:', id);
-    console.log('likes:', likes);
-    try {
-      const response = { ok: true }; // Mock response for testing
+    const emoji = emojis.find(e => e.id === id);
+    if (!emoji) return;
 
-      if (response.ok) {
-        console.log('response.ok');
-        setLikes(prevLikes => {
-          const newLikes = { ...prevLikes };
-          // Toggle like: if already liked, unlike (decrease count), otherwise like (increase count)
-          newLikes[id] = newLikes[id] > 0 ? newLikes[id] - 1 : (newLikes[id] || 0) + 1;
-          return newLikes;
-        });
-      } else {
-        console.error('Failed to toggle like for emoji');
-      }
-    } catch (error) {
-      console.error('Error toggling like for emoji:', error);
-    }
+    // Toggle local like state immediately
+    setLocalLikes(prev => ({ ...prev, [id]: !prev[id] }));
+
+    // Update emoji likes count optimistically
+    const newLikesCount = localLikes[id] ? emoji.likes_count - 1 : emoji.likes_count + 1;
+    setEmojis(current => 
+      current.map(e => e.id === id ? { ...e, likes_count: newLikesCount } : e)
+    );
+
+    // Send request to server
+    await toggleEmojiLike(id);
+    // Note: We're not updating state based on the server response
+    // The real-time subscription will handle any discrepancies
   };
 
   const renderEmojiCard = (emoji: Emoji) => (
@@ -94,13 +109,13 @@ export function EmojiGrid() {
           <Download size={24} />
         </button>
         <button
-          className={`text-white p-2 ${likes[emoji.id] > 0 ? 'text-red-500' : ''}`}
+          className={`text-white p-2 ${localLikes[emoji.id] ? 'text-red-500' : ''}`}
           onClick={() => handleLike(emoji.id)}
         >
-          <Heart size={24} fill={likes[emoji.id] > 0 ? 'currentColor' : 'none'} />
+          <Heart size={24} fill={localLikes[emoji.id] ? 'currentColor' : 'none'} />
         </button>
       </div>
-      <p className="text-center text-gray-500 mt-2">{likes[emoji.id] || 0} Likes</p>
+      <p className="text-center text-gray-500 mt-2">{emoji.likes_count} Likes</p>
     </Card>
   );
 
