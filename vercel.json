@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/generate-emoji.js": {
+      "maxDuration": 120
+    }
+  }
+}
