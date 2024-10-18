@@ -13,11 +13,13 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  console.log('Handler started');
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
   const { prompt, userId } = req.body;
+  console.log('Received prompt:', prompt, 'userId:', userId);
 
   if (!prompt) {
     return res.status(400).json({ message: 'Prompt is required' });
@@ -29,7 +31,9 @@ export default async function handler(
 
   try {
     const modifiedPrompt = "A TOK emoji of " + prompt;
+    console.log('Modified prompt:', modifiedPrompt);
 
+    console.log('Calling Replicate API');
     const output = await replicate.run(
       "fofr/sdxl-emoji:dee76b5afde21b0f01ed7925f0665b7e879c50ee718c5f78a9d38e04d523cc5e",
       {
@@ -39,6 +43,7 @@ export default async function handler(
         },
       }
     );
+    console.log('Replicate API response:', output);
 
     if (Array.isArray(output) && output.length > 0 && output[0] instanceof ReadableStream) {
       const stream = output[0];
@@ -101,6 +106,9 @@ export default async function handler(
     }
   } catch (error) {
     console.error('Error generating emoji:', error);
-    return res.status(500).json({ message: 'Error generating emoji' });
+    return res.status(500).json({ 
+      message: 'Error generating emoji', 
+      error: error instanceof Error ? error.toString() : 'Unknown error' 
+    });
   }
 }
