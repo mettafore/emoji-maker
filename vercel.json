@@ -1,6 +1,6 @@
 {
   "functions": {
-    "api/generate-emoji.js": {
+    "pages/api/generate-emoji.js": {
       "maxDuration": 60
     }
   }
